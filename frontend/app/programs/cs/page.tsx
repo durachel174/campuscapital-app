@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { api } from "@/lib/api";
 import { StatCard } from "@/components/ui/StatCard";
 import { ArchetypeTag } from "@/components/ui/ArchetypeTag";
