@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+*.pyo
+data/raw/
+data/processed/
+*.egg-info/
+.pytest_cache/
+frontend/.next/
+frontend/node_modules/
+frontend/.env.local
