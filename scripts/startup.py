@@ -40,8 +40,10 @@ def main():
 
         log.info("Startup complete.")
     except Exception as e:
-        log.error(f"Startup DB initialization failed (will continue): {e}")
-        log.warning("API will start but may return errors until the database is reachable.")
+        log.error(f"Startup DB initialization failed: {e}")
+        sys.exit(1)
+    finally:
+        engine.dispose()
 
 
 if __name__ == "__main__":
