@@ -71,10 +71,9 @@ export function ArchetypeScatterChart({ data }: { data: HealthScores["metric_sca
       <div className="mt-3 flex flex-wrap justify-center gap-4">
         {ARCHETYPES.map((arch) => (
           <div key={arch} className="flex items-center gap-1.5 text-xs text-gray-600">
-            <span
-              className="inline-block h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: ARCHETYPE_COLOR[arch] }}
-            />
+            <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+              <circle cx="5" cy="5" r="5" fill={ARCHETYPE_COLOR[arch]} fillOpacity={0.75} />
+            </svg>
             {arch}
           </div>
         ))}
