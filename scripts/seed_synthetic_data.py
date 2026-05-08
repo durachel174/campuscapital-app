@@ -108,6 +108,8 @@ def cagr(start, end, years):
 
 
 def seed_all(db):
+    per_school_intl: dict[int, float] = {}
+
     # --- CPI ---
     for year in YEARS:
         if not db.query(CPIData).filter_by(year=year).first():
@@ -196,6 +198,13 @@ def seed_all(db):
             db.add(ai_prog)
             db.flush()
 
+        # Per-school multipliers — applied once, persist across all years
+        # This is what creates genuine cross-school variation within each archetype
+        endowment_multiplier = jitter(1.0, 0.40)   # ±40% endowment wealth variation
+        td_multiplier = jitter(1.0, 0.18)           # ±18% tuition dependence variation
+        school_intl_pct = jitter(profile["intl_pct"], 0.35)  # ±35% international student variation
+        per_school_intl[uni.id] = school_intl_pct
+
         for year in YEARS:
             # Enrollment trends: CS boom 2012–2019, plateau/modest decline 2020-2023
             t = year - 2012
@@ -260,7 +269,7 @@ def seed_all(db):
             # Financials
             enroll_total = int(total_enrollment * (1 + 0.005 * t))
             tuition_rev = tuition_yr * enroll_total * (0.55 if is_public else 0.65)
-            total_rev = tuition_rev / profile["tuition_dependence"]
+            total_rev = tuition_rev / (profile["tuition_dependence"] * td_multiplier)
             existing_f = db.query(UniversityFinancials).filter_by(
                 university_id=uni.id, fiscal_year=year
             ).first()
@@ -272,7 +281,7 @@ def seed_all(db):
                     federal_grants=round(total_rev * jitter(0.15, 0.3), 0),
                     state_appropriations=round(total_rev * (0.20 if is_public else 0.01), 0),
                     endowment_assets=round(
-                        profile["endowment_per_student"] * enroll_total * (1.07 ** t), 0
+                        profile["endowment_per_student"] * endowment_multiplier * enroll_total * (1.07 ** t), 0
                     ),
                     total_expenses=round(total_rev * jitter(0.95, 0.05), 0),
                     instruction_expenses=round(total_rev * jitter(0.30, 0.05), 0),
@@ -297,12 +306,12 @@ def seed_all(db):
         db.commit()
 
     # Compute health scores
-    _compute_health_scores(db)
+    _compute_health_scores(db, per_school_intl)
     db.commit()
     print(f"Synthetic data seeded for {len(TARGET_UNIVERSITIES)} universities.")
 
 
-def _compute_health_scores(db):
+def _compute_health_scores(db, per_school_intl: dict):
     universities = db.query(University).filter_by(is_target=True).all()
     for uni in universities:
         fin_recent = db.query(UniversityFinancials).filter_by(
@@ -367,7 +376,7 @@ def _compute_health_scores(db):
                 computed_at=date(2024, 1, 1),
                 tuition_dependence_pct=round(tuition_dep * 100, 1),
                 endowment_per_student=round(endow_per_student, 0),
-                international_student_pct=round(ARCHETYPES[uni.archetype]["intl_pct"] * 100, 1),
+                international_student_pct=round(per_school_intl.get(uni.id, ARCHETYPES[uni.archetype]["intl_pct"]) * 100, 1),
                 net_tuition_growth_rate=round(net_tuition_growth, 2),
                 enrollment_trend=round(enroll_trend, 2),
                 composite_score=round(score, 1),
@@ -377,6 +386,7 @@ def _compute_health_scores(db):
         else:
             existing.tuition_dependence_pct = round(tuition_dep * 100, 1)
             existing.endowment_per_student = round(endow_per_student, 0)
+            existing.international_student_pct = round(per_school_intl.get(uni.id, ARCHETYPES[uni.archetype]["intl_pct"]) * 100, 1)
             existing.composite_score = round(score, 1)
             existing.archetype = archetype
 
