@@ -8,6 +8,7 @@ const links = [
   { href: "/programs/ai", label: "AI Programs" },
   { href: "/tuition", label: "Tuition" },
   { href: "/universities", label: "Universities" },
+  { href: "/report", label: "Report" },
 ];
 
 export function Nav() {
