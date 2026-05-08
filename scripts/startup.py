@@ -19,25 +19,31 @@ log = logging.getLogger(__name__)
 def main():
     log.info("Running startup checks...")
 
-    # 1. Create tables if they don't exist
-    Base.metadata.create_all(bind=engine)
-    log.info("Tables verified.")
-
-    # 2. Seed data only if universities table is empty
-    db = SessionLocal()
     try:
-        count = db.query(University).count()
-        if count == 0:
-            log.info("Database is empty — seeding synthetic data...")
-            from scripts.seed_synthetic_data import seed_all
-            seed_all(db)
-            log.info("Seed complete.")
-        else:
-            log.info(f"Database already populated ({count} universities). Skipping seed.")
-    finally:
-        db.close()
+        # 1. Create tables if they don't exist
+        Base.metadata.create_all(bind=engine)
+        log.info("Tables verified.")
 
-    log.info("Startup complete.")
+        # 2. Seed data only if universities table is empty
+        db = SessionLocal()
+        try:
+            count = db.query(University).count()
+            if count == 0:
+                log.info("Database is empty — seeding synthetic data...")
+                from scripts.seed_synthetic_data import seed_all
+                seed_all(db)
+                log.info("Seed complete.")
+            else:
+                log.info(f"Database already populated ({count} universities). Skipping seed.")
+        finally:
+            db.close()
+
+        log.info("Startup complete.")
+    except Exception as e:
+        log.error(f"Startup DB initialization failed: {e}")
+        sys.exit(1)
+    finally:
+        engine.dispose()
 
 
 if __name__ == "__main__":

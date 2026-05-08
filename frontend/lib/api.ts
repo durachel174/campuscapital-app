@@ -1,8 +1,14 @@
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { next: { revalidate: 300 } });
-  if (!res.ok) throw new Error(`API error ${res.status}: ${path}`);
+  const url = `${API_BASE}${path}`;
+  let res: Response;
+  try {
+    res = await fetch(url, { next: { revalidate: 300 } });
+  } catch (e) {
+    throw new Error(`Could not reach API at ${url} — is NEXT_PUBLIC_API_URL set correctly? (${e})`);
+  }
+  if (!res.ok) throw new Error(`API returned ${res.status} for ${url}`);
   return res.json();
 }
 
