@@ -4,7 +4,7 @@ dockerfilePath = "Dockerfile"
 
 [deploy]
 preDeployCommand = "python scripts/startup.py"
-startCommand = "uvicorn api.main:app --host 0.0.0.0 --port $PORT"
+startCommand = "sh -c 'uvicorn api.main:app --host 0.0.0.0 --port $PORT'"
 healthcheckPath = "/"
 healthcheckTimeout = 60
 restartPolicyType = "on_failure"
